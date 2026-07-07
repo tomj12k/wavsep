@@ -1,0 +1,144 @@
+# KNOWN_VULNS — ground-truth vulnerability catalog
+# Purpose: answer key for benchmarking Scantonomous scan findings against this app.
+# Diff scanner output vs. this file: a hit on a `vulnerable_source` path == true positive;
+# a hit on a `secure_source` path == false positive.
+#
+# Schema per entry (benchmark variant — carries case-count fields):
+#   id                    stable slug for this vuln class
+#   category              WAVSEP test class
+#   cwe                   primary CWE id(s)
+#   owasp                 OWASP Top 10 (2021) category
+#   true_positive_count   number of real-vulnerability test cases (.jsp files, excl. false-positive dirs)
+#   false_positive_count  number of shipped false-positive/decoy cases
+#   vulnerable_source     source dir(s) holding the vulnerable test cases
+#   ground_truth_file     path to a shipped answer key, if any
+#   notes                 context / caveats
+
+app: wavsep
+full_name: WAVSEP - Web Application Vulnerability Scanner Evaluation Project
+upstream: https://github.com/sectooladdict/wavsep
+fork: https://github.com/tomj12k/wavsep
+language: Java
+scan_surface: [SAST-java, DAST-web]
+catalog_notes: >
+  WAVSEP encodes its ground truth in the source-tree layout rather than a CSV.
+  Vulnerable test cases are grouped by vulnerability class under
+  WebContent/active/<Class>/ (plus WebContent/passive/ and
+  WebContent/active-form-action-version/). Each .jsp file is one test case. Every
+  class ships a dedicated *-FalsePositives-* directory of intentionally safe
+  decoys for measuring scanner false positives. Counts below are exact .jsp file
+  counts obtained with `find <dir> -name '*.jsp' | wc -l`: false_positive_count =
+  files under the class's *FalsePositive* dir(s); true_positive_count = all other
+  .jsp cases in the class. Grand total across WebContent = 1981 .jsp files.
+  No single shipped CSV answer key exists; the directory structure IS the answer key.
+
+vulns:
+  - id: wavsep-sqli
+    category: SQL-Injection
+    cwe: [CWE-89]
+    owasp: A03:2021-Injection
+    true_positive_count: 142
+    false_positive_count: 13
+    vulnerable_source: [WebContent/active/SQL-Injection/]
+    ground_truth_file: null
+    notes: Error/valid/500 GET+POST SQLi cases. 13 decoys in SInjection-FalsePositives-GET.
+
+  - id: wavsep-reflected-xss
+    category: Reflected-XSS
+    cwe: [CWE-79]
+    owasp: A03:2021-Injection
+    true_positive_count: 92
+    false_positive_count: 10
+    vulnerable_source: [WebContent/active/Reflected-XSS/]
+    ground_truth_file: null
+    notes: RXSS GET/POST/COOKIE incl. Experimental. 10 decoys in RXSS-FalsePositives-GET.
+
+  - id: wavsep-dom-xss
+    category: DOM-XSS
+    cwe: [CWE-79]
+    owasp: A03:2021-Injection
+    true_positive_count: 5
+    false_positive_count: 0
+    vulnerable_source: [WebContent/active/DOM-XSS/]
+    ground_truth_file: null
+    notes: DOM-based XSS (Experimental GET). No dedicated false-positive dir.
+
+  - id: wavsep-lfi
+    category: LFI
+    cwe: [CWE-22, CWE-98]
+    owasp: A01:2021-Broken Access Control
+    true_positive_count: 852
+    false_positive_count: 13
+    vulnerable_source: [WebContent/active/LFI/]
+    ground_truth_file: null
+    notes: Local file inclusion / path traversal, largest class. 13 decoys in LFI-FalsePositives-GET.
+
+  - id: wavsep-lfi-form-action
+    category: LFI-form-action
+    cwe: [CWE-22, CWE-98]
+    owasp: A01:2021-Broken Access Control
+    true_positive_count: 427
+    false_positive_count: 0
+    vulnerable_source: [WebContent/active-form-action-version/]
+    ground_truth_file: null
+    notes: POST form-action variants of the LFI cases (LFI-*Detection dirs under active-form-action-version). No separate false-positive dir shipped in this tree.
+
+  - id: wavsep-rfi
+    category: RFI
+    cwe: [CWE-98]
+    owasp: A03:2021-Injection
+    true_positive_count: 144
+    false_positive_count: 11
+    vulnerable_source: [WebContent/active/RFI/]
+    ground_truth_file: null
+    notes: Remote file inclusion GET/POST. 11 decoys in RFI-FalsePositives-GET.
+
+  - id: wavsep-rfi-form-action
+    category: RFI-form-action
+    cwe: [CWE-98]
+    owasp: A03:2021-Injection
+    true_positive_count: 73
+    false_positive_count: 0
+    vulnerable_source: [WebContent/active-form-action-version/]
+    ground_truth_file: null
+    notes: POST form-action variants of the RFI cases (RFI-*Detection dirs under active-form-action-version).
+
+  - id: wavsep-unvalidated-redirect
+    category: Unvalidated-Redirect
+    cwe: [CWE-601]
+    owasp: A01:2021-Broken Access Control
+    true_positive_count: 72
+    false_positive_count: 18
+    vulnerable_source: [WebContent/active/Unvalidated-Redirect/]
+    ground_truth_file: null
+    notes: 302 + JavaScript redirect cases. 18 decoys in Redirect-FalsePositives-GET.
+
+  - id: wavsep-obsolete-files
+    category: Obsolete-Files
+    cwe: [CWE-530]
+    owasp: A05:2021-Security Misconfiguration
+    true_positive_count: 70
+    false_positive_count: 13
+    vulnerable_source: [WebContent/active/Obsolete-Files/]
+    ground_truth_file: null
+    notes: Backup/obsolete file exposure detection. 13 decoys in the FalsePositive dir.
+
+  - id: wavsep-passive-info
+    category: passive-info-disclosure
+    cwe: [CWE-200]
+    owasp: A01:2021-Broken Access Control
+    true_positive_count: 4
+    false_positive_count: 0
+    vulnerable_source: [WebContent/passive/info/]
+    ground_truth_file: null
+    notes: Passive information-disclosure test cases. No false-positive dir.
+
+  - id: wavsep-passive-session
+    category: passive-session
+    cwe: [CWE-384, CWE-614]
+    owasp: A07:2021-Identification and Authentication Failures
+    true_positive_count: 3
+    false_positive_count: 0
+    vulnerable_source: [WebContent/passive/session/]
+    ground_truth_file: null
+    notes: Passive session-handling test cases. No false-positive dir.
